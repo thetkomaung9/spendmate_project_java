@@ -1,7 +1,6 @@
 package app.dao;
 
 import app.model.Transaction;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,6 +117,21 @@ public class TransactionDAO {
             }
         }
         return list;
+    }
+
+    public void deleteTransaction(String date, String category, int amount) throws SQLException {
+        String sql = "DELETE FROM transactions WHERE date = ? AND category = ? AND amount = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, date);
+            pstmt.setString(2, category);
+            pstmt.setInt(3, amount);
+            pstmt.executeUpdate();
+        }
+    }
+
+    public List<Transaction> findByDate(String date) throws SQLException {
+        return getDetailsOfDay(date);
     }
 
     private Transaction mapRow(ResultSet rs) throws SQLException {

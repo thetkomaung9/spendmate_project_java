@@ -2,83 +2,107 @@ package app.ui;
 
 import app.service.BudgetService;
 import app.service.TransactionService;
-
-import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import javax.swing.*;
 
 public class BudgetPanel extends JPanel {
 
     private final BudgetService budgetService;
     private final TransactionService transactionService;
-    private final JLabel infoLabel;
-    private final JTextField budgetField;
-
-    private final DateTimeFormatter ymFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    private JLabel infoLabel;
 
     public BudgetPanel(BudgetService budgetService, TransactionService transactionService) {
         this.budgetService = budgetService;
         this.transactionService = transactionService;
-        this.infoLabel = new JLabel(" ");
-        this.budgetField = new JTextField(10);
         initUI();
         refreshInfo();
     }
 
     private void initUI() {
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(15, 15));
+        setBackground(new Color(240, 242, 245));
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.add(new JLabel("This Month Budget:"));
-        top.add(budgetField);
-        JButton saveBtn = new JButton("Save Budget");
-        saveBtn.addActionListener(e -> saveBudget());
-        top.add(saveBtn);
+        // Title Panel
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setBackground(new Color(240, 242, 245));
+        
+        JLabel titleLabel = new JLabel("📈 Monthly Budget Tracker");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(41, 128, 185));
+        titlePanel.add(titleLabel, BorderLayout.WEST);
+        
+        add(titlePanel, BorderLayout.NORTH);
 
-        add(top, BorderLayout.NORTH);
-        add(infoLabel, BorderLayout.CENTER);
-    }
+        // Info Panel with card design
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        infoLabel = new JLabel();
+        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        infoPanel.add(infoLabel);
+        
+        add(infoPanel, BorderLayout.CENTER);
 
-    private void saveBudget() {
-        String ym = LocalDate.now().format(ymFormatter);
-        try {
-            int limit = Integer.parseInt(budgetField.getText().trim());
-            budgetService.saveMonthlyBudget(ym, limit);
-            refreshInfo();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Budget must be a number");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saving budget: " + ex.getMessage());
-        }
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(new Color(240, 242, 245));
+        
+        JButton setBudgetBtn = new JButton("💵 Set Budget");
+        setBudgetBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        setBudgetBtn.setBackground(new Color(52, 152, 219));
+        setBudgetBtn.setForeground(Color.WHITE);
+        setBudgetBtn.setFocusPainted(false);
+        setBudgetBtn.setBorderPainted(false);
+        setBudgetBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        setBudgetBtn.setPreferredSize(new Dimension(150, 40));
+        setBudgetBtn.addActionListener(e -> setBudget());
+        buttonPanel.add(setBudgetBtn);
+        
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
     public void refreshInfo() {
-        String ym = LocalDate.now().format(ymFormatter);
         try {
-            Integer limit = budgetService.getBudgetLimit(ym);
-            int used = budgetService.getUsedExpenseOfMonth(ym);
-            if (limit == null) {
-                infoLabel.setText("No budget set for " + ym + ". Used expense: " + used);
-            } else {
-                boolean over = budgetService.isOverBudget(ym);
-                String msg = "Month " + ym + " Budget: " + limit + " , Used: " + used;
-                if (over) {
-                    msg += " (OVER BUDGET)";
-                    infoLabel.setForeground(Color.RED);
-                    JOptionPane.showMessageDialog(this,
-                            "주의! 이번 달 예산을 초과했습니다.",
-                            "Budget Over",
-                            JOptionPane.WARNING_MESSAGE);
-                } else {
-                    infoLabel.setForeground(Color.BLUE);
-                }
-                infoLabel.setText(msg);
-            }
+            LocalDate now = LocalDate.now();
+            String ym = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            
+            Integer budgetLimit = budgetService.getBudgetLimit(ym);
+            int budget = (budgetLimit != null) ? budgetLimit : 0;
+            int expense = transactionService.getMonthExpense(ym);
+            int remaining = budget - expense;
+
+            String info = String.format("<html>Budget: $%d<br>Spent: $%d<br>Remaining: $%d</html>", 
+                                      budget, expense, remaining);
+            infoLabel.setText(info);
         } catch (Exception e) {
-            e.printStackTrace();
             infoLabel.setText("Error loading budget info");
+        }
+    }
+
+    private void setBudget() {
+        String input = JOptionPane.showInputDialog(this, "Enter monthly budget:");
+        if (input != null && !input.trim().isEmpty()) {
+            try {
+                int amount = Integer.parseInt(input);
+                LocalDate now = LocalDate.now();
+                String ym = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+                budgetService.saveMonthlyBudget(ym, amount);
+                refreshInfo();
+                JOptionPane.showMessageDialog(this, "Budget set successfully!");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid amount!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
+            }
         }
     }
 }

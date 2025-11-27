@@ -2,7 +2,6 @@ package app.service;
 
 import app.dao.TransactionDAO;
 import app.model.Transaction;
-
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,5 +42,9 @@ public class TransactionService {
 
     public int getDayExpense(LocalDate date) throws SQLException {
         return transactionDAO.getTotalExpenseOfDay(date.format(dateFormatter));
+    }
+
+    public void deleteTransaction(String date, String category, int amount) throws SQLException {
+        transactionDAO.deleteTransaction(date, category, amount);
     }
 }
