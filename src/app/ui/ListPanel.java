@@ -70,6 +70,33 @@ public class ListPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         add(scrollPane, BorderLayout.CENTER);
+        
+        // Bottom panel with delete button
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottomPanel.setBackground(Color.WHITE);
+        
+        JButton deleteBtn = new JButton("🗑️ Delete Selected");
+        deleteBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        deleteBtn.setBackground(new Color(231, 76, 60));
+        deleteBtn.setForeground(Color.BLACK);
+        deleteBtn.setFocusPainted(false);
+        deleteBtn.setBorderPainted(false);
+        deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        deleteBtn.setPreferredSize(new Dimension(180, 40));
+        deleteBtn.addActionListener(e -> deleteSelectedTransaction());
+        
+        // Hover effect
+        deleteBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                deleteBtn.setBackground(new Color(192, 57, 43));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                deleteBtn.setBackground(new Color(231, 76, 60));
+            }
+        });
+        
+        bottomPanel.add(deleteBtn);
+        add(bottomPanel, BorderLayout.SOUTH);
     }
 
     private void fillMonthCombo() {
@@ -100,6 +127,34 @@ public class ListPanel extends JPanel {
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage());
+        }
+    }
+    
+    private void deleteSelectedTransaction() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "⚠️ Please select a transaction to delete!", 
+                "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Are you sure you want to delete this transaction?", 
+            "Confirm Delete", 
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+            
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                int id = (int) tableModel.getValueAt(selectedRow, 0);
+                transactionService.deleteTransactionById(id);
+                JOptionPane.showMessageDialog(this, "✓ Transaction deleted successfully!", 
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                reloadMonth();
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "✖ Error deleting transaction: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

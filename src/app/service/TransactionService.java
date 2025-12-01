@@ -47,4 +47,8 @@ public class TransactionService {
     public void deleteTransaction(String date, String category, int amount) throws SQLException {
         transactionDAO.deleteTransaction(date, category, amount);
     }
+    
+    public void deleteTransactionById(int id) throws SQLException {
+        transactionDAO.delete(id);
+    }
 }

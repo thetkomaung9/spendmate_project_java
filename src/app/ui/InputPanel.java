@@ -46,7 +46,7 @@ public class InputPanel extends JPanel {
         gbc.gridwidth = 2;
         JLabel sectionTitle = new JLabel("▶ ADD TRANSACTION");
         sectionTitle.setFont(new Font("SansSerif", Font.BOLD, 18));
-        sectionTitle.setForeground(Color.BLACK);
+        sectionTitle.setForeground(Color.BLUE);
         add(sectionTitle, gbc);
         
         gbc.gridwidth = 1;
@@ -127,7 +127,7 @@ public class InputPanel extends JPanel {
         JButton saveBtn = new JButton("▶ ADD TRANSACTION");
         saveBtn.setFont(new Font("SansSerif", Font.BOLD, 16));
         saveBtn.setBackground(new Color(46, 204, 113));
-        saveBtn.setForeground(Color.WHITE);
+        saveBtn.setForeground(Color.BLUE);
         saveBtn.setFocusPainted(false);
         saveBtn.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(39, 174, 96), 2),

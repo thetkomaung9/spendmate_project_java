@@ -59,7 +59,7 @@ public class BudgetPanel extends JPanel {
         JButton setBudgetBtn = new JButton("💵 Set Budget");
         setBudgetBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         setBudgetBtn.setBackground(new Color(52, 152, 219));
-        setBudgetBtn.setForeground(Color.WHITE);
+        setBudgetBtn.setForeground(Color.BLACK);
         setBudgetBtn.setFocusPainted(false);
         setBudgetBtn.setBorderPainted(false);
         setBudgetBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
