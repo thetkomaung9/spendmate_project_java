@@ -2,28 +2,23 @@ package app.ui;
 
 import app.model.Transaction;
 import app.service.TransactionService;
-
-import javax.swing.*;
 import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
 
 public class DashboardPanel extends JPanel {
 
     private final TransactionService transactionService;
-    private JLabel monthIncomeLabel;
-    private JLabel monthExpenseLabel;
-    private JLabel todayExpenseLabel;
-    private JLabel balanceLabel;
+    private JLabel monthIncomeValue;
+    private JLabel monthExpenseValue;
+    private JLabel todayExpenseValue;
+    private JLabel balanceValue;
     private JPanel categoryPanel;
-
-    private static final Color PRIMARY_COLOR = new Color(52, 152, 219);
-    private static final Color SUCCESS_COLOR = new Color(46, 204, 113);
-    private static final Color DANGER_COLOR = new Color(231, 76, 60);
-    private static final Color WARNING_COLOR = new Color(241, 196, 15);
+    private JPanel statsPanel;
 
     public DashboardPanel(TransactionService transactionService) {
         this.transactionService = transactionService;
@@ -32,81 +27,148 @@ public class DashboardPanel extends JPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(15, 15));
-        setBackground(new Color(240, 242, 245));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(UIStyles.PADDING_LG, UIStyles.PADDING_LG));
+        setBackground(UIStyles.BG_PRIMARY);
+        setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG));
 
-        // Title
-        JLabel titleLabel = new JLabel("📊 Financial Dashboard");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
-        titleLabel.setForeground(new Color(44, 62, 80));
-        add(titleLabel, BorderLayout.NORTH);
+        // Title section
+        JPanel titleSection = new JPanel(new BorderLayout());
+        titleSection.setOpaque(false);
+        
+        JLabel titleLabel = new JLabel("📊  Financial Dashboard");
+        titleLabel.setFont(UIStyles.FONT_TITLE);
+        titleLabel.setForeground(UIStyles.TEXT_PRIMARY);
+        
+        JLabel subtitleLabel = new JLabel("Track your income, expenses, and budget at a glance");
+        subtitleLabel.setFont(UIStyles.FONT_BODY);
+        subtitleLabel.setForeground(UIStyles.TEXT_SECONDARY);
+        
+        titleSection.add(titleLabel, BorderLayout.NORTH);
+        titleSection.add(subtitleLabel, BorderLayout.SOUTH);
+        titleSection.setBorder(BorderFactory.createEmptyBorder(0, 0, UIStyles.PADDING_MD, 0));
+        
+        add(titleSection, BorderLayout.NORTH);
 
         // Main content panel
-        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
-        mainPanel.setBackground(new Color(240, 242, 245));
+        JPanel mainPanel = new JPanel(new BorderLayout(UIStyles.PADDING_LG, UIStyles.PADDING_LG));
+        mainPanel.setOpaque(false);
 
-        // Top stats cards
-        JPanel statsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        statsPanel.setBackground(new Color(240, 242, 245));
-
-        monthIncomeLabel = new JLabel("$0");
-        monthExpenseLabel = new JLabel("$0");
-        todayExpenseLabel = new JLabel("$0");
-        balanceLabel = new JLabel("$0");
-
-        statsPanel.add(createStatCard("💰 Month Income", monthIncomeLabel, SUCCESS_COLOR));
-        statsPanel.add(createStatCard("💸 Month Expense", monthExpenseLabel, DANGER_COLOR));
-        statsPanel.add(createStatCard("📅 Today Expense", todayExpenseLabel, WARNING_COLOR));
-        statsPanel.add(createStatCard("💵 Balance", balanceLabel, PRIMARY_COLOR));
+        // Stats cards row
+        statsPanel = new JPanel(new GridLayout(1, 4, UIStyles.PADDING_MD, 0));
+        statsPanel.setOpaque(false);
+        statsPanel.setPreferredSize(new Dimension(0, 140));
+        
+        // Initialize stat labels
+        monthIncomeValue = new JLabel("$0");
+        monthExpenseValue = new JLabel("$0");
+        todayExpenseValue = new JLabel("$0");
+        balanceValue = new JLabel("$0");
+        
+        statsPanel.add(createStatCard("Month Income", monthIncomeValue, "💰", UIStyles.SUCCESS));
+        statsPanel.add(createStatCard("Month Expense", monthExpenseValue, "💸", UIStyles.DANGER));
+        statsPanel.add(createStatCard("Today Expense", todayExpenseValue, "📅", UIStyles.WARNING));
+        statsPanel.add(createStatCard("Balance", balanceValue, "💵", UIStyles.PRIMARY));
 
         mainPanel.add(statsPanel, BorderLayout.NORTH);
 
-        // Category breakdown panel
-        JPanel categorySection = new JPanel(new BorderLayout(10, 10));
-        categorySection.setBackground(Color.WHITE);
-        categorySection.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-
-        JLabel categoryTitle = new JLabel("📋 Today's Spending by Category");
-        categoryTitle.setFont(new Font("SansSerif", Font.BOLD, 16));
-        categoryTitle.setForeground(new Color(52, 73, 94));
-        categorySection.add(categoryTitle, BorderLayout.NORTH);
-
-        categoryPanel = new JPanel();
-        categoryPanel.setLayout(new BoxLayout(categoryPanel, BoxLayout.Y_AXIS));
-        categoryPanel.setBackground(Color.WHITE);
-
-        JScrollPane categoryScroll = new JScrollPane(categoryPanel);
-        categoryScroll.setBorder(null);
-        categoryScroll.getVerticalScrollBar().setUnitIncrement(16);
-        categorySection.add(categoryScroll, BorderLayout.CENTER);
-
-        mainPanel.add(categorySection, BorderLayout.CENTER);
+        // Category breakdown card
+        JPanel categoryCard = createCategoryCard();
+        mainPanel.add(categoryCard, BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    private JPanel createStatCard(String title, JLabel valueLabel, Color color) {
-        JPanel card = new JPanel();
-        card.setLayout(new BorderLayout(10, 10));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-            BorderFactory.createEmptyBorder(20, 15, 20, 15)
-        ));
+    private JPanel createStatCard(String title, JLabel valueLabel, String icon, Color accentColor) {
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Shadow
+                g2.setColor(new Color(0, 0, 0, 20));
+                g2.fillRoundRect(3, 3, getWidth() - 6, getHeight() - 4, 16, 16);
+                
+                // Card background
+                g2.setColor(UIStyles.BG_CARD);
+                g2.fillRoundRect(0, 0, getWidth() - 6, getHeight() - 6, 16, 16);
+                
+                // Top accent bar
+                g2.setColor(accentColor);
+                g2.fillRoundRect(0, 0, getWidth() - 6, 5, 16, 16);
+                g2.fillRect(0, 3, getWidth() - 6, 3);
+                
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setLayout(new BorderLayout(8, 12));
+        card.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_LG + 4, UIStyles.PADDING_MD, UIStyles.PADDING_MD, UIStyles.PADDING_MD));
 
+        // Icon and title row
+        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        topRow.setOpaque(false);
+        
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
-        titleLabel.setForeground(new Color(127, 140, 141));
+        titleLabel.setFont(UIStyles.FONT_SMALL);
+        titleLabel.setForeground(UIStyles.TEXT_SECONDARY);
+        
+        topRow.add(iconLabel);
+        topRow.add(titleLabel);
 
-        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
-        valueLabel.setForeground(color);
+        // Value label
+        valueLabel.setFont(UIStyles.FONT_STAT);
+        valueLabel.setForeground(accentColor);
 
-        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(topRow, BorderLayout.NORTH);
         card.add(valueLabel, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createCategoryCard() {
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Shadow
+                g2.setColor(new Color(0, 0, 0, 15));
+                g2.fillRoundRect(3, 3, getWidth() - 6, getHeight() - 4, 16, 16);
+                
+                // Card background
+                g2.setColor(UIStyles.BG_CARD);
+                g2.fillRoundRect(0, 0, getWidth() - 6, getHeight() - 6, 16, 16);
+                
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setLayout(new BorderLayout(UIStyles.PADDING_MD, UIStyles.PADDING_MD));
+        card.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG));
+
+        // Title
+        JLabel categoryTitle = new JLabel("📋  Today's Spending by Category");
+        categoryTitle.setFont(UIStyles.FONT_SUBTITLE);
+        categoryTitle.setForeground(UIStyles.TEXT_PRIMARY);
+        card.add(categoryTitle, BorderLayout.NORTH);
+
+        // Category list
+        categoryPanel = new JPanel();
+        categoryPanel.setLayout(new BoxLayout(categoryPanel, BoxLayout.Y_AXIS));
+        categoryPanel.setOpaque(false);
+        categoryPanel.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_MD, 0, 0, 0));
+
+        JScrollPane categoryScroll = new JScrollPane(categoryPanel);
+        categoryScroll.setBorder(null);
+        categoryScroll.setOpaque(false);
+        categoryScroll.getViewport().setOpaque(false);
+        categoryScroll.getVerticalScrollBar().setUnitIncrement(16);
+        card.add(categoryScroll, BorderLayout.CENTER);
 
         return card;
     }
@@ -117,24 +179,19 @@ public class DashboardPanel extends JPanel {
             DateTimeFormatter ymFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
             String ym = today.format(ymFormatter);
 
-            // Month income
             int monthIncome = transactionService.getMonthIncome(ym);
-            monthIncomeLabel.setText("$" + monthIncome);
+            monthIncomeValue.setText("$" + String.format("%,d", monthIncome));
 
-            // Month expense
             int monthExpense = transactionService.getMonthExpense(ym);
-            monthExpenseLabel.setText("$" + monthExpense);
+            monthExpenseValue.setText("$" + String.format("%,d", monthExpense));
 
-            // Today expense
             int todayExpense = transactionService.getDayExpense(today);
-            todayExpenseLabel.setText("$" + todayExpense);
+            todayExpenseValue.setText("$" + String.format("%,d", todayExpense));
 
-            // Balance
             int balance = monthIncome - monthExpense;
-            balanceLabel.setText("$" + balance);
-            balanceLabel.setForeground(balance >= 0 ? SUCCESS_COLOR : DANGER_COLOR);
+            balanceValue.setText("$" + String.format("%,d", balance));
+            balanceValue.setForeground(balance >= 0 ? UIStyles.SUCCESS : UIStyles.DANGER);
 
-            // Update today's category breakdown
             updateCategoryBreakdown(today);
 
         } catch (SQLException e) {
@@ -158,21 +215,30 @@ public class DashboardPanel extends JPanel {
         }
 
         if (categoryMap.isEmpty()) {
-            JLabel emptyLabel = new JLabel("No expenses recorded today");
-            emptyLabel.setFont(new Font("SansSerif", Font.ITALIC, 14));
-            emptyLabel.setForeground(Color.GRAY);
-            emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            categoryPanel.add(emptyLabel);
+            JPanel emptyPanel = new JPanel(new BorderLayout());
+            emptyPanel.setOpaque(false);
+            emptyPanel.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_XL, 0, UIStyles.PADDING_XL, 0));
+            
+            JLabel emptyIcon = new JLabel("🎉", SwingConstants.CENTER);
+            emptyIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+            
+            JLabel emptyLabel = new JLabel("No expenses recorded today!", SwingConstants.CENTER);
+            emptyLabel.setFont(UIStyles.FONT_BODY);
+            emptyLabel.setForeground(UIStyles.TEXT_MUTED);
+            
+            emptyPanel.add(emptyIcon, BorderLayout.CENTER);
+            emptyPanel.add(emptyLabel, BorderLayout.SOUTH);
+            categoryPanel.add(emptyPanel);
         } else {
             Color[] colors = {
-                new Color(231, 76, 60),
-                new Color(52, 152, 219),
-                new Color(46, 204, 113),
-                new Color(241, 196, 15),
-                new Color(155, 89, 182),
-                new Color(52, 73, 94),
-                new Color(230, 126, 34),
-                new Color(26, 188, 156)
+                UIStyles.DANGER,
+                UIStyles.INFO,
+                UIStyles.SUCCESS,
+                UIStyles.WARNING,
+                new Color(168, 85, 247),  // Purple
+                new Color(236, 72, 153),  // Pink
+                new Color(20, 184, 166),  // Teal
+                new Color(249, 115, 22)   // Orange
             };
 
             int colorIndex = 0;
@@ -185,7 +251,7 @@ public class DashboardPanel extends JPanel {
                     colors[colorIndex % colors.length]
                 );
                 categoryPanel.add(row);
-                categoryPanel.add(Box.createVerticalStrut(10));
+                categoryPanel.add(Box.createVerticalStrut(UIStyles.PADDING_SM));
                 colorIndex++;
             }
         }
@@ -195,43 +261,52 @@ public class DashboardPanel extends JPanel {
     }
 
     private JPanel createCategoryRow(String category, int amount, double percentage, Color color) {
-        JPanel row = new JPanel(new BorderLayout(10, 5));
-        row.setBackground(Color.WHITE);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        JPanel row = new JPanel(new BorderLayout(UIStyles.PADDING_MD, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        row.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_SM, 0, UIStyles.PADDING_SM, 0));
 
         // Left: Color indicator and category name
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        leftPanel.setBackground(Color.WHITE);
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, UIStyles.PADDING_SM, 0));
+        leftPanel.setOpaque(false);
 
-        JPanel colorBox = new JPanel();
-        colorBox.setBackground(color);
-        colorBox.setPreferredSize(new Dimension(25, 25));
-        colorBox.setBorder(BorderFactory.createLineBorder(color.darker(), 1));
+        JPanel colorBox = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2.dispose();
+            }
+        };
+        colorBox.setOpaque(false);
+        colorBox.setPreferredSize(new Dimension(8, 32));
 
         JLabel nameLabel = new JLabel(category);
-        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        nameLabel.setFont(UIStyles.FONT_BODY_BOLD);
+        nameLabel.setForeground(UIStyles.TEXT_PRIMARY);
 
         leftPanel.add(colorBox);
         leftPanel.add(nameLabel);
 
-        // Right: Amount and percentage
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        rightPanel.setBackground(Color.WHITE);
+        // Right: Amount, percentage and progress bar
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIStyles.PADDING_MD, 0));
+        rightPanel.setOpaque(false);
 
-        JLabel amountLabel = new JLabel(String.format("$%d (%.1f%%)", amount, percentage));
-        amountLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        JLabel amountLabel = new JLabel(String.format("$%,d", amount));
+        amountLabel.setFont(UIStyles.FONT_BODY_BOLD);
         amountLabel.setForeground(color);
 
-        rightPanel.add(amountLabel);
+        JLabel percentLabel = new JLabel(String.format("%.1f%%", percentage));
+        percentLabel.setFont(UIStyles.FONT_SMALL);
+        percentLabel.setForeground(UIStyles.TEXT_SECONDARY);
 
-        // Progress bar
-        JProgressBar progressBar = new JProgressBar(0, 100);
-        progressBar.setValue((int) percentage);
-        progressBar.setStringPainted(false);
-        progressBar.setPreferredSize(new Dimension(150, 20));
-        progressBar.setForeground(color);
-        progressBar.setBackground(new Color(236, 240, 241));
-        progressBar.setBorderPainted(false);
+        JProgressBar progressBar = UIStyles.createProgressBar((int) percentage, color);
+        progressBar.setPreferredSize(new Dimension(120, 8));
+
+        rightPanel.add(percentLabel);
+        rightPanel.add(amountLabel);
         rightPanel.add(progressBar);
 
         row.add(leftPanel, BorderLayout.WEST);

@@ -8,7 +8,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 public class ListPanel extends JPanel {
 
@@ -24,79 +26,163 @@ public class ListPanel extends JPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(10, 10));
-        setBackground(Color.WHITE);
-        setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(52, 152, 219), 2),
-                "📋 Transaction List",
-                0,
-                0,
-                new Font("SansSerif", Font.BOLD, 16),
-                new Color(52, 152, 219)
-            ),
-            BorderFactory.createEmptyBorder(10, 15, 15, 15)
-        ));
+        setLayout(new BorderLayout());
+        setOpaque(false);
 
-        // Top panel with month selector
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        topPanel.setBackground(Color.WHITE);
+        // Main card panel
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Shadow
+                g2.setColor(new Color(0, 0, 0, 15));
+                g2.fillRoundRect(3, 3, getWidth() - 6, getHeight() - 4, 16, 16);
+                
+                // Card background
+                g2.setColor(UIStyles.BG_CARD);
+                g2.fillRoundRect(0, 0, getWidth() - 6, getHeight() - 6, 16, 16);
+                
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setLayout(new BorderLayout(0, UIStyles.PADDING_MD));
+        card.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG));
+
+        // Header panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
         
-        JLabel monthLabel = new JLabel("📅 Select Month:");
-        monthLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
-        topPanel.add(monthLabel);
+        JLabel titleLabel = new JLabel("📋  Transaction History");
+        titleLabel.setFont(UIStyles.FONT_SUBTITLE);
+        titleLabel.setForeground(UIStyles.TEXT_PRIMARY);
+        
+        JLabel subtitleLabel = new JLabel("View and manage your transactions");
+        subtitleLabel.setFont(UIStyles.FONT_SMALL);
+        subtitleLabel.setForeground(UIStyles.TEXT_MUTED);
+        
+        titlePanel.add(titleLabel, BorderLayout.NORTH);
+        titlePanel.add(subtitleLabel, BorderLayout.SOUTH);
+
+        // Month selector
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIStyles.PADDING_SM, 0));
+        filterPanel.setOpaque(false);
+        
+        JLabel monthLabel = new JLabel("Month: ");
+        monthLabel.setFont(UIStyles.FONT_BODY);
+        monthLabel.setForeground(UIStyles.TEXT_SECONDARY);
         
         monthCombo = new JComboBox<>();
-        monthCombo.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        monthCombo.setPreferredSize(new Dimension(120, 30));
+        monthCombo.setFont(UIStyles.FONT_BODY);
+        monthCombo.setBackground(UIStyles.BG_CARD);
+        monthCombo.setPreferredSize(new Dimension(130, 36));
         fillMonthCombo();
         monthCombo.addActionListener(e -> reloadMonth());
-        topPanel.add(monthCombo);
         
-        add(topPanel, BorderLayout.NORTH);
+        filterPanel.add(monthLabel);
+        filterPanel.add(monthCombo);
 
-        // Table with modern styling
+        headerPanel.add(titlePanel, BorderLayout.WEST);
+        headerPanel.add(filterPanel, BorderLayout.EAST);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, UIStyles.PADDING_MD, 0));
+        
+        card.add(headerPanel, BorderLayout.NORTH);
+
+        // Table
         String[] columns = {"ID", "Type", "Date", "Category", "Amount", "Memo"};
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        table.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
-        table.getTableHeader().setBackground(new Color(52, 152, 219));
-        table.getTableHeader().setForeground(Color.WHITE);
-        table.setSelectionBackground(new Color(189, 224, 254));
-        table.setGridColor(new Color(220, 220, 220));
-        
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        add(scrollPane, BorderLayout.CENTER);
-        
-        // Bottom panel with delete button
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        bottomPanel.setBackground(Color.WHITE);
-        
-        JButton deleteBtn = new JButton("🗑️ Delete Selected");
-        deleteBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
-        deleteBtn.setBackground(new Color(231, 76, 60));
-        deleteBtn.setForeground(Color.BLACK);
-        deleteBtn.setFocusPainted(false);
-        deleteBtn.setBorderPainted(false);
-        deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        deleteBtn.setPreferredSize(new Dimension(180, 40));
-        deleteBtn.addActionListener(e -> deleteSelectedTransaction());
-        
-        // Hover effect
-        deleteBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                deleteBtn.setBackground(new Color(192, 57, 43));
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
             }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                deleteBtn.setBackground(new Color(231, 76, 60));
+        };
+        
+        table = new JTable(tableModel);
+        table.setFont(UIStyles.FONT_BODY);
+        table.setRowHeight(44);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(UIStyles.PRIMARY_LIGHT);
+        table.setSelectionForeground(UIStyles.TEXT_PRIMARY);
+        table.setBackground(UIStyles.BG_CARD);
+        table.setFillsViewportHeight(true);
+        
+        // Custom header
+        JTableHeader header = table.getTableHeader();
+        header.setFont(UIStyles.FONT_BODY_BOLD);
+        header.setBackground(UIStyles.BG_SECONDARY);
+        header.setForeground(UIStyles.TEXT_PRIMARY);
+        header.setPreferredSize(new Dimension(0, 44));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIStyles.BORDER));
+        
+        // Center align columns
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        
+        // Custom cell renderer for alternating rows and type coloring
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                if (!isSelected) {
+                    c.setBackground(row % 2 == 0 ? UIStyles.BG_CARD : UIStyles.BG_SECONDARY);
+                }
+                
+                // Color the type column
+                if (column == 1 && value != null) {
+                    if ("income".equals(value.toString())) {
+                        c.setForeground(UIStyles.SUCCESS);
+                    } else {
+                        c.setForeground(UIStyles.DANGER);
+                    }
+                    setFont(UIStyles.FONT_BODY_BOLD);
+                } else if (column == 4) {
+                    // Amount column
+                    c.setForeground(UIStyles.TEXT_PRIMARY);
+                    setFont(UIStyles.FONT_BODY_BOLD);
+                } else {
+                    c.setForeground(UIStyles.TEXT_PRIMARY);
+                    setFont(UIStyles.FONT_BODY);
+                }
+                
+                setHorizontalAlignment(column == 5 ? JLabel.LEFT : JLabel.CENTER);
+                setBorder(BorderFactory.createEmptyBorder(0, UIStyles.PADDING_SM, 0, UIStyles.PADDING_SM));
+                
+                return c;
             }
         });
         
+        // Set column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(80);   // Type
+        table.getColumnModel().getColumn(2).setPreferredWidth(100);  // Date
+        table.getColumnModel().getColumn(3).setPreferredWidth(120);  // Category
+        table.getColumnModel().getColumn(4).setPreferredWidth(80);   // Amount
+        table.getColumnModel().getColumn(5).setPreferredWidth(150);  // Memo
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(UIStyles.BORDER, 1));
+        scrollPane.getViewport().setBackground(UIStyles.BG_CARD);
+        card.add(scrollPane, BorderLayout.CENTER);
+        
+        // Bottom panel with delete button
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, UIStyles.PADDING_MD, UIStyles.PADDING_SM));
+        bottomPanel.setOpaque(false);
+        
+        JButton deleteBtn = UIStyles.createDangerButton("🗑️  Delete Selected");
+        deleteBtn.addActionListener(e -> deleteSelectedTransaction());
+        
         bottomPanel.add(deleteBtn);
-        add(bottomPanel, BorderLayout.SOUTH);
+        card.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(card, BorderLayout.CENTER);
     }
 
     private void fillMonthCombo() {
@@ -121,7 +207,7 @@ public class ListPanel extends JPanel {
                     t.getType(),
                     t.getDate(),
                     t.getCategory(),
-                    t.getAmount(),
+                    "$" + String.format("%,d", t.getAmount()),
                     t.getMemo()
                 });
             }
@@ -133,8 +219,10 @@ public class ListPanel extends JPanel {
     private void deleteSelectedTransaction() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "⚠️ Please select a transaction to delete!", 
-                "No Selection", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "Please select a transaction to delete.", 
+                "No Selection", 
+                JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -148,12 +236,16 @@ public class ListPanel extends JPanel {
             try {
                 int id = (int) tableModel.getValueAt(selectedRow, 0);
                 transactionService.deleteTransactionById(id);
-                JOptionPane.showMessageDialog(this, "✓ Transaction deleted successfully!", 
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Transaction deleted successfully!", 
+                    "Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
                 reloadMonth();
             } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "✖ Error deleting transaction: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Error deleting transaction: " + e.getMessage(),
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }

@@ -30,124 +30,125 @@ public class InputPanel extends JPanel {
     }
 
     private void initUI() {
-        setBackground(new Color(250, 250, 250));
-        setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(41, 128, 185), 3),
-            BorderFactory.createEmptyBorder(20, 25, 20, 25)
-        ));
+        setLayout(new BorderLayout());
+        setOpaque(false);
         
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        // Main card panel
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Shadow
+                g2.setColor(new Color(0, 0, 0, 15));
+                g2.fillRoundRect(3, 3, getWidth() - 6, getHeight() - 4, 16, 16);
+                
+                // Card background
+                g2.setColor(UIStyles.BG_CARD);
+                g2.fillRoundRect(0, 0, getWidth() - 6, getHeight() - 6, 16, 16);
+                
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setLayout(new BorderLayout(0, UIStyles.PADDING_MD));
+        card.setBorder(BorderFactory.createEmptyBorder(UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG, UIStyles.PADDING_LG));
+        
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        
+        JLabel titleLabel = new JLabel("➕  Add Transaction");
+        titleLabel.setFont(UIStyles.FONT_SUBTITLE);
+        titleLabel.setForeground(UIStyles.TEXT_PRIMARY);
+        
+        JLabel subtitleLabel = new JLabel("Record your income or expense");
+        subtitleLabel.setFont(UIStyles.FONT_SMALL);
+        subtitleLabel.setForeground(UIStyles.TEXT_MUTED);
+        
+        headerPanel.add(titleLabel, BorderLayout.NORTH);
+        headerPanel.add(subtitleLabel, BorderLayout.SOUTH);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, UIStyles.PADDING_MD, 0));
+        
+        card.add(headerPanel, BorderLayout.NORTH);
 
-        // Section Title
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        JLabel sectionTitle = new JLabel("▶ ADD TRANSACTION");
-        sectionTitle.setFont(new Font("SansSerif", Font.BOLD, 18));
-        sectionTitle.setForeground(Color.BLUE);
-        add(sectionTitle, gbc);
-        
-        gbc.gridwidth = 1;
-        
-        // Type
-        gbc.gridx = 0; gbc.gridy = 1;
-        JLabel typeLabel = new JLabel("● Type:");
-        typeLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        typeLabel.setForeground(Color.BLACK);
-        add(typeLabel, gbc);
-        
-        typeCombo = new JComboBox<>(new String[]{"expense", "income"});
-        typeCombo.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        typeCombo.setPreferredSize(new Dimension(200, 35));
-        typeCombo.addActionListener(e -> updateCategoryCombo());
-        gbc.gridx = 1;
-        add(typeCombo, gbc);
+        // Form panel
+        JPanel formPanel = new JPanel();
+        formPanel.setOpaque(false);
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
 
-        // Date
-        gbc.gridx = 0; gbc.gridy = 2;
-        JLabel dateLabel = new JLabel("● Date:");
-        dateLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        dateLabel.setForeground(Color.BLACK);
-        add(dateLabel, gbc);
-        
-        dateField = new JTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        dateField.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        dateField.setPreferredSize(new Dimension(200, 35));
-        gbc.gridx = 1;
-        add(dateField, gbc);
+        // Type field
+        formPanel.add(createFormRow("Type", createTypeCombo()));
+        formPanel.add(Box.createVerticalStrut(UIStyles.PADDING_MD));
 
-        // Category
-        gbc.gridx = 0; gbc.gridy = 3;
-        JLabel categoryLabel = new JLabel("● Category:");
-        categoryLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        categoryLabel.setForeground(Color.BLACK);
-        add(categoryLabel, gbc);
-        
-        categoryCombo = new JComboBox<>();
-        categoryCombo.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        categoryCombo.setPreferredSize(new Dimension(200, 35));
-        updateCategoryCombo();
-        gbc.gridx = 1;
-        add(categoryCombo, gbc);
+        // Date field
+        dateField = UIStyles.createTextField("YYYY-MM-DD");
+        dateField.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        formPanel.add(createFormRow("Date", dateField));
+        formPanel.add(Box.createVerticalStrut(UIStyles.PADDING_MD));
 
-        // Amount
-        gbc.gridx = 0; gbc.gridy = 4;
-        JLabel amountLabel = new JLabel("● Amount ($):");
-        amountLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        amountLabel.setForeground(Color.BLACK);
-        add(amountLabel, gbc);
-        
-        amountField = new JTextField();
-        amountField.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        amountField.setPreferredSize(new Dimension(200, 35));
-        gbc.gridx = 1;
-        add(amountField, gbc);
+        // Category field
+        formPanel.add(createFormRow("Category", createCategoryCombo()));
+        formPanel.add(Box.createVerticalStrut(UIStyles.PADDING_MD));
 
-        // Memo
-        gbc.gridx = 0; gbc.gridy = 5;
-        JLabel memoLabel = new JLabel("● Memo:");
-        memoLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        memoLabel.setForeground(Color.BLACK);
-        add(memoLabel, gbc);
-        
-        memoField = new JTextField();
-        memoField.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        memoField.setForeground(Color.BLACK);
-        memoField.setPreferredSize(new Dimension(200, 35));
-        gbc.gridx = 1;
-        add(memoField, gbc);
+        // Amount field
+        amountField = UIStyles.createTextField("Enter amount");
+        formPanel.add(createFormRow("Amount ($)", amountField));
+        formPanel.add(Box.createVerticalStrut(UIStyles.PADDING_MD));
 
-        // Save button with bold icon
-        gbc.gridx = 0; gbc.gridy = 6;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(20, 10, 10, 10);
-        
-        JButton saveBtn = new JButton("▶ ADD TRANSACTION");
-        saveBtn.setFont(new Font("SansSerif", Font.BOLD, 16));
-        saveBtn.setBackground(new Color(46, 204, 113));
-        saveBtn.setForeground(Color.BLUE);
-        saveBtn.setFocusPainted(false);
-        saveBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(39, 174, 96), 2),
-            BorderFactory.createEmptyBorder(12, 25, 12, 25)
-        ));
-        saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        saveBtn.setPreferredSize(new Dimension(250, 50));
+        // Memo field
+        memoField = UIStyles.createTextField("Optional note");
+        formPanel.add(createFormRow("Memo", memoField));
+        formPanel.add(Box.createVerticalStrut(UIStyles.PADDING_LG));
+
+        // Submit button
+        JButton saveBtn = UIStyles.createSuccessButton("✓  Add Transaction");
+        saveBtn.setPreferredSize(new Dimension(0, 48));
+        saveBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         saveBtn.addActionListener(e -> addTransaction());
         
-        // Hover effect
-        saveBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                saveBtn.setBackground(new Color(39, 174, 96));
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                saveBtn.setBackground(new Color(46, 204, 113));
-            }
-        });
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(saveBtn, BorderLayout.CENTER);
+        formPanel.add(buttonPanel);
+
+        card.add(formPanel, BorderLayout.CENTER);
+        add(card, BorderLayout.CENTER);
+    }
+
+    private JPanel createFormRow(String labelText, JComponent field) {
+        JPanel row = new JPanel(new BorderLayout(0, UIStyles.PADDING_XS));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         
-        add(saveBtn, gbc);
+        JLabel label = UIStyles.createFieldLabel(labelText);
+        row.add(label, BorderLayout.NORTH);
+        
+        if (field instanceof JTextField) {
+            ((JTextField) field).setPreferredSize(new Dimension(0, 42));
+        } else if (field instanceof JComboBox) {
+            field.setPreferredSize(new Dimension(0, 42));
+        }
+        row.add(field, BorderLayout.CENTER);
+        
+        return row;
+    }
+
+    private JComboBox<String> createTypeCombo() {
+        typeCombo = new JComboBox<>(new String[]{"expense", "income"});
+        typeCombo.setFont(UIStyles.FONT_BODY);
+        typeCombo.setBackground(UIStyles.BG_CARD);
+        typeCombo.addActionListener(e -> updateCategoryCombo());
+        return typeCombo;
+    }
+
+    private JComboBox<String> createCategoryCombo() {
+        categoryCombo = new JComboBox<>();
+        categoryCombo.setFont(UIStyles.FONT_BODY);
+        categoryCombo.setBackground(UIStyles.BG_CARD);
+        updateCategoryCombo();
+        return categoryCombo;
     }
 
     private void updateCategoryCombo() {
@@ -173,8 +174,12 @@ public class InputPanel extends JPanel {
             String memo = memoField.getText();
 
             transactionService.addTransaction(type, date, category, amount, memo);
-            JOptionPane.showMessageDialog(this, "✓ Transaction saved successfully!", 
-                "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Success dialog with custom styling
+            JOptionPane.showMessageDialog(this, 
+                "Transaction saved successfully!", 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
             
             // Clear fields
             amountField.setText("");
@@ -185,11 +190,15 @@ public class InputPanel extends JPanel {
                 onDataChanged.run();
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "✖ Invalid amount! Please enter a number.",
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "Please enter a valid number for amount.",
+                "Invalid Input", 
+                JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "✖ Database error: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "Database error: " + ex.getMessage(),
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 }
