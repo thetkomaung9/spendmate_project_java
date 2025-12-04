@@ -13,8 +13,8 @@ if [ ! -d "lib" ]; then
 fi
 
 # Check for required JAR files
-if [ ! -f "lib/sqlite-jdbc-3.45.1.0.jar" ]; then
-    echo "Error: sqlite-jdbc-3.45.1.0.jar not found in lib directory!"
+if [ ! -f "lib/mysql-connector-j-8.3.0.jar" ]; then
+    echo "Error: mysql-connector-j-8.3.0.jar not found in lib directory!"
     exit 1
 fi
 
@@ -29,7 +29,7 @@ if [ ! -f "lib/slf4j-simple-1.7.36.jar" ]; then
 fi
 
 # Run the application
-java -cp "src:lib/sqlite-jdbc-3.45.1.0.jar:lib/slf4j-api-1.7.36.jar:lib/slf4j-simple-1.7.36.jar" app.MainApp
+java -cp "src:lib/mysql-connector-j-8.3.0.jar:lib/slf4j-api-1.7.36.jar:lib/slf4j-simple-1.7.36.jar" app.MainApp
 
 echo ""
 echo "Application closed."

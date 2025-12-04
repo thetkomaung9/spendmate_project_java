@@ -84,7 +84,8 @@ public class BudgetPanel extends JPanel {
                                       budget, expense, remaining);
             infoLabel.setText(info);
         } catch (Exception e) {
-            infoLabel.setText("Error loading budget info");
+            e.printStackTrace();
+            infoLabel.setText("Error loading budget info: " + e.getMessage());
         }
     }
 

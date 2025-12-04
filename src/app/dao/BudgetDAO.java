@@ -1,13 +1,14 @@
 package app.dao;
 
 import app.model.Budget;
-
 import java.sql.*;
 
 public class BudgetDAO {
 
+    private static final String TABLE = DBConnection.TABLE_BUDGETS;
+
     public Budget findByYearMonth(String yearMonth) throws SQLException {
-        String sql = "SELECT * FROM budgets WHERE year_month = ?";
+        String sql = "SELECT * FROM " + TABLE + " WHERE `year_month` = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -28,7 +29,7 @@ public class BudgetDAO {
     public void upsert(Budget b) throws SQLException {
         Budget existing = findByYearMonth(b.getYearMonth());
         if (existing == null) {
-            String sql = "INSERT INTO budgets(year_month, limit_amt) VALUES(?, ?)";
+            String sql = "INSERT INTO " + TABLE + "(`year_month`, `limit_amt`) VALUES(?, ?)";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, b.getYearMonth());
@@ -36,7 +37,7 @@ public class BudgetDAO {
                 pstmt.executeUpdate();
             }
         } else {
-            String sql = "UPDATE budgets SET limit_amt=? WHERE year_month=?";
+            String sql = "UPDATE " + TABLE + " SET `limit_amt`=? WHERE `year_month`=?";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, b.getLimitAmt());

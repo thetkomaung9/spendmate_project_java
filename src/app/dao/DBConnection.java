@@ -7,18 +7,29 @@ import java.sql.Statement;
 
 /**
  * Database connection manager for SpendMate application.
- * Handles SQLite database initialization and connection pooling.
+ * Handles MySQL database initialization and connection pooling.
  * 
  * Database Schema:
- * - transactions: Stores all income and expense transactions
- * - budgets: Stores monthly budget limits
+ * - SpendMate_transactions: Stores all income and expense transactions
+ * - SpendMate_budgets: Stores monthly budget limits
  * 
  * @author SpendMate Team
  */
 public class DBConnection {
 
-    private static final String URL = "jdbc:sqlite:spendmate.db";
-    private static final String DB_NAME = "spendmate.db";
+    // MySQL 서버 연결 정보
+    private static final String HOST = "nsyun.synology.me";
+    private static final String PORT = "3306";
+    private static final String DATABASE = "db";
+    private static final String USER = "user";
+    private static final String PASSWORD = "user1234";
+    
+    private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DATABASE + 
+            "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8";
+    
+    // 테이블 이름 (다른 팀과 중복되지 않도록 SpendMate_ 접두사 사용)
+    public static final String TABLE_TRANSACTIONS = "SpendMate_transactions";
+    public static final String TABLE_BUDGETS = "SpendMate_budgets";
     
     // Static initializer to create database schema on first load
     static {
@@ -33,38 +44,41 @@ public class DBConnection {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Create transactions table with proper constraints
-            String sqlTx = "CREATE TABLE IF NOT EXISTS transactions (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "type TEXT NOT NULL CHECK(type IN ('income', 'expense'))," +
-                    "date TEXT NOT NULL," +
-                    "category TEXT NOT NULL," +
-                    "amount INTEGER NOT NULL CHECK(amount >= 0)," +
-                    "memo TEXT," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                    ");";
+            // Create transactions table with proper constraints (MySQL syntax)
+            String sqlTx = "CREATE TABLE IF NOT EXISTS " + TABLE_TRANSACTIONS + " (" +
+                    "`id` INT PRIMARY KEY AUTO_INCREMENT, " +
+                    "`type` VARCHAR(10) NOT NULL, " +
+                    "`date` VARCHAR(10) NOT NULL, " +
+                    "`category` VARCHAR(50) NOT NULL, " +
+                    "`amount` INT NOT NULL, " +
+                    "`memo` VARCHAR(255), " +
+                    "`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-            // Create budgets table with unique constraint on year_month
-            String sqlBudget = "CREATE TABLE IF NOT EXISTS budgets (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "year_month TEXT NOT NULL UNIQUE," +
-                    "limit_amt INTEGER NOT NULL CHECK(limit_amt >= 0)," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                    ");";
+            // Create budgets table with unique constraint on year_month (MySQL syntax)
+            String sqlBudget = "CREATE TABLE IF NOT EXISTS " + TABLE_BUDGETS + " (" +
+                    "`id` INT PRIMARY KEY AUTO_INCREMENT, " +
+                    "`year_month` VARCHAR(7) NOT NULL UNIQUE, " +
+                    "`limit_amt` INT NOT NULL, " +
+                    "`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
             stmt.execute(sqlTx);
             stmt.execute(sqlBudget);
 
             // Create indexes for faster queries
-            String idxTypeDate = "CREATE INDEX IF NOT EXISTS idx_tx_type_date ON transactions(type, date);";
-            String idxCategory = "CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category);";
-            String idxDate = "CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date);";
+            String idxTypeDate = "CREATE INDEX idx_spendmate_tx_type_date ON " + TABLE_TRANSACTIONS + "(`type`, `date`)";
+            String idxCategory = "CREATE INDEX idx_spendmate_tx_category ON " + TABLE_TRANSACTIONS + "(`category`)";
+            String idxDate = "CREATE INDEX idx_spendmate_tx_date ON " + TABLE_TRANSACTIONS + "(`date`)";
             
-            stmt.execute(idxTypeDate);
-            stmt.execute(idxCategory);
-            stmt.execute(idxDate);
+            // MySQL에서 인덱스가 이미 존재하면 예외 발생하므로 개별 처리
+            try { stmt.execute(idxTypeDate); } catch (SQLException ignored) {}
+            try { stmt.execute(idxCategory); } catch (SQLException ignored) {}
+            try { stmt.execute(idxDate); } catch (SQLException ignored) {}
 
-            System.out.println("Database initialized successfully: " + DB_NAME);
+            System.out.println("MySQL Database initialized successfully!");
+            System.out.println("Server: " + HOST + ":" + PORT + "/" + DATABASE);
+            System.out.println("Tables: " + TABLE_TRANSACTIONS + ", " + TABLE_BUDGETS);
 
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());
@@ -74,19 +88,19 @@ public class DBConnection {
     }
 
     /**
-     * Get a connection to the SQLite database.
+     * Get a connection to the MySQL database.
      * 
      * @return A new database connection
      * @throws SQLException if connection fails
      */
     public static Connection getConnection() throws SQLException {
         try {
-            // Ensure SQLite JDBC driver is loaded
-            Class.forName("org.sqlite.JDBC");
+            // Ensure MySQL JDBC driver is loaded
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new SQLException("SQLite JDBC driver not found", e);
+            throw new SQLException("MySQL JDBC driver not found", e);
         }
-        return DriverManager.getConnection(URL);
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     /**
@@ -104,11 +118,29 @@ public class DBConnection {
     }
 
     /**
-     * Get the database file name.
+     * Get the database name.
      * 
-     * @return The database file name
+     * @return The database name
      */
     public static String getDatabaseName() {
-        return DB_NAME;
+        return DATABASE;
+    }
+    
+    /**
+     * Get the transactions table name.
+     * 
+     * @return The transactions table name
+     */
+    public static String getTransactionsTable() {
+        return TABLE_TRANSACTIONS;
+    }
+    
+    /**
+     * Get the budgets table name.
+     * 
+     * @return The budgets table name
+     */
+    public static String getBudgetsTable() {
+        return TABLE_BUDGETS;
     }
 }

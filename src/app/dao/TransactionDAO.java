@@ -7,8 +7,10 @@ import java.util.List;
 
 public class TransactionDAO {
 
+    private static final String TABLE = DBConnection.TABLE_TRANSACTIONS;
+
     public void insert(Transaction t) throws SQLException {
-        String sql = "INSERT INTO transactions(type, date, category, amount, memo) VALUES(?,?,?,?,?)";
+        String sql = "INSERT INTO " + TABLE + "(`type`, `date`, `category`, `amount`, `memo`) VALUES(?,?,?,?,?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -22,7 +24,7 @@ public class TransactionDAO {
     }
 
     public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM transactions WHERE id=?";
+        String sql = "DELETE FROM " + TABLE + " WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
@@ -32,7 +34,7 @@ public class TransactionDAO {
 
     public List<Transaction> findByPeriod(String fromDate, String toDate) throws SQLException {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE date BETWEEN ? AND ? ORDER BY date ASC, id ASC";
+        String sql = "SELECT * FROM " + TABLE + " WHERE `date` BETWEEN ? AND ? ORDER BY `date` ASC, `id` ASC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, fromDate);
@@ -46,8 +48,8 @@ public class TransactionDAO {
     }
 
     public int getTotalByType(String type, String fromDate, String toDate) throws SQLException {
-        String sql = "SELECT IFNULL(SUM(amount),0) AS total FROM transactions " +
-                     "WHERE type=? AND date BETWEEN ? AND ?";
+        String sql = "SELECT COALESCE(SUM(`amount`),0) AS total FROM " + TABLE + " " +
+                     "WHERE `type`=? AND `date` BETWEEN ? AND ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, type);
@@ -59,8 +61,8 @@ public class TransactionDAO {
     }
 
     public int getTotalIncomeOfMonth(String yearMonth) throws SQLException {
-        String sql = "SELECT IFNULL(SUM(amount),0) AS total FROM transactions " +
-                     "WHERE type='income' AND date LIKE ?";
+        String sql = "SELECT COALESCE(SUM(`amount`),0) AS total FROM " + TABLE + " " +
+                     "WHERE `type`='income' AND `date` LIKE ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, yearMonth + "%");
@@ -70,8 +72,8 @@ public class TransactionDAO {
     }
 
     public int getTotalExpenseOfMonth(String yearMonth) throws SQLException {
-        String sql = "SELECT IFNULL(SUM(amount),0) AS total FROM transactions " +
-                     "WHERE type='expense' AND date LIKE ?";
+        String sql = "SELECT COALESCE(SUM(`amount`),0) AS total FROM " + TABLE + " " +
+                     "WHERE `type`='expense' AND `date` LIKE ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, yearMonth + "%");
@@ -81,8 +83,8 @@ public class TransactionDAO {
     }
 
     public int getTotalExpenseOfDay(String date) throws SQLException {
-        String sql = "SELECT IFNULL(SUM(amount),0) AS total FROM transactions " +
-                     "WHERE type='expense' AND date=?";
+        String sql = "SELECT COALESCE(SUM(`amount`),0) AS total FROM " + TABLE + " " +
+                     "WHERE `type`='expense' AND `date`=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, date);
@@ -93,7 +95,7 @@ public class TransactionDAO {
 
     public List<Transaction> getDetailsOfDay(String date) throws SQLException {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE date=? ORDER BY id ASC";
+        String sql = "SELECT * FROM " + TABLE + " WHERE `date`=? ORDER BY `id` ASC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, date);
@@ -107,7 +109,7 @@ public class TransactionDAO {
 
     public List<Transaction> getDetailsOfMonth(String yearMonth) throws SQLException {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE date LIKE ? ORDER BY date ASC, id ASC";
+        String sql = "SELECT * FROM " + TABLE + " WHERE `date` LIKE ? ORDER BY `date` ASC, `id` ASC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, yearMonth + "%");
@@ -120,7 +122,7 @@ public class TransactionDAO {
     }
 
     public void deleteTransaction(String date, String category, int amount) throws SQLException {
-        String sql = "DELETE FROM transactions WHERE date = ? AND category = ? AND amount = ? LIMIT 1";
+        String sql = "DELETE FROM " + TABLE + " WHERE `date` = ? AND `category` = ? AND `amount` = ? LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, date);
