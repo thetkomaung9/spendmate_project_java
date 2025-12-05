@@ -30,6 +30,7 @@ public class DBConnection {
     // 테이블 이름 (다른 팀과 중복되지 않도록 SpendMate_ 접두사 사용)
     public static final String TABLE_TRANSACTIONS = "SpendMate_transactions";
     public static final String TABLE_BUDGETS = "SpendMate_budgets";
+    public static final String TABLE_USERS = "SpendMate_users";
     
     // Static initializer to create database schema on first load
     static {
@@ -66,6 +67,16 @@ public class DBConnection {
             stmt.execute(sqlTx);
             stmt.execute(sqlBudget);
 
+            // Create users table for authentication
+            String sqlUsers = "CREATE TABLE IF NOT EXISTS " + TABLE_USERS + " (" +
+                    "`id` INT PRIMARY KEY AUTO_INCREMENT, " +
+                    "`username` VARCHAR(50) NOT NULL UNIQUE, " +
+                    "`password` VARCHAR(64) NOT NULL, " +
+                    "`email` VARCHAR(100) NOT NULL UNIQUE, " +
+                    "`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+            stmt.execute(sqlUsers);
+
             // Create indexes for faster queries
             String idxTypeDate = "CREATE INDEX idx_spendmate_tx_type_date ON " + TABLE_TRANSACTIONS + "(`type`, `date`)";
             String idxCategory = "CREATE INDEX idx_spendmate_tx_category ON " + TABLE_TRANSACTIONS + "(`category`)";
@@ -78,7 +89,7 @@ public class DBConnection {
 
             System.out.println("MySQL Database initialized successfully!");
             System.out.println("Server: " + HOST + ":" + PORT + "/" + DATABASE);
-            System.out.println("Tables: " + TABLE_TRANSACTIONS + ", " + TABLE_BUDGETS);
+            System.out.println("Tables: " + TABLE_TRANSACTIONS + ", " + TABLE_BUDGETS + ", " + TABLE_USERS);
 
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());

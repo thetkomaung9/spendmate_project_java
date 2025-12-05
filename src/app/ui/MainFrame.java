@@ -1,7 +1,9 @@
 package app.ui;
 
+import app.model.User;
 import app.service.BudgetService;
 import app.service.TransactionService;
+import app.service.UserService;
 import java.awt.*;
 import javax.swing.*;
 
@@ -9,16 +11,34 @@ public class MainFrame extends JFrame {
 
     private final TransactionService transactionService;
     private final BudgetService budgetService;
+    private UserService userService;
+    private User currentUser;
     private InputPanel inputPanel;
     private ListPanel listPanel;
     private BudgetPanel budgetPanel;
     private DashboardPanel dashboardPanel;
+    private JLabel userLabel;
 
     public MainFrame(TransactionService transactionService, BudgetService budgetService) {
         this.transactionService = transactionService;
         this.budgetService = budgetService;
         UIStyles.applyGlobalStyles();
         initUI();
+    }
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        if (userLabel != null && user != null) {
+            userLabel.setText("👤 " + user.getUsername());
+        }
+    }
+
+    public void setUserService(UserService userService) {
+        this.userService = userService;
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
     }
 
     private void initUI() {
@@ -104,12 +124,56 @@ public class MainFrame extends JFrame {
         dateLabel.setFont(UIStyles.FONT_BODY);
         dateLabel.setForeground(new Color(255, 255, 255, 200));
         
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
+        // User info and logout button
+        userLabel = new JLabel("👤 User");
+        userLabel.setFont(UIStyles.FONT_BODY_BOLD);
+        userLabel.setForeground(Color.WHITE);
+        
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(UIStyles.FONT_SMALL);
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setBackground(new Color(255, 255, 255, 50));
+        logoutButton.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(255, 255, 255, 100), 1, true),
+            BorderFactory.createEmptyBorder(5, 15, 5, 15)
+        ));
+        logoutButton.setFocusPainted(false);
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutButton.setContentAreaFilled(false);
+        logoutButton.setOpaque(false);
+        logoutButton.addActionListener(e -> performLogout());
+        
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 8));
         rightPanel.setOpaque(false);
         rightPanel.add(dateLabel);
+        rightPanel.add(Box.createHorizontalStrut(20));
+        rightPanel.add(userLabel);
+        rightPanel.add(logoutButton);
         header.add(rightPanel, BorderLayout.EAST);
 
         return header;
+    }
+    
+    private void performLogout() {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to logout?",
+            "Confirm Logout",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (userService != null) {
+                userService.logout();
+            }
+            dispose();
+            
+            // Restart the application with login screen
+            SwingUtilities.invokeLater(() -> {
+                app.MainApp.main(new String[]{});
+            });
+        }
     }
 
     private JTabbedPane createModernTabbedPane() {
